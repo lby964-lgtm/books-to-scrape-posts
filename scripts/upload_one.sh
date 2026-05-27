@@ -8,14 +8,24 @@ COUNT="${COUNT:-5}"
 BRANCH="${BRANCH:-main}"
 PYTHON_BIN="${PYTHON_BIN:-python}"
 STATE_FILE="${STATE_FILE:-.upload_state}"
+POST_DATE="${POST_DATE:-}"
 
 if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "This script must run inside a git repository." >&2
   exit 1
 fi
 
+if [ -z "$POST_DATE" ]; then
+  first_post="$(git ls-files "posts/*.md" | sort | head -n 1 || true)"
+  if [[ "$first_post" =~ posts/([0-9]{4}-[0-9]{2}-[0-9]{2})- ]]; then
+    POST_DATE="${BASH_REMATCH[1]}"
+  else
+    POST_DATE="$(date +%F)"
+  fi
+fi
+
 "$PYTHON_BIN" src/crawl_books.py --count "$COUNT" --output data/books.json
-"$PYTHON_BIN" src/generate_markdown.py --input data/books.json --output-dir posts
+"$PYTHON_BIN" src/generate_markdown.py --input data/books.json --output-dir posts --date "$POST_DATE"
 
 mapfile -t files < <(find posts -maxdepth 1 -type f -name "*.md" | sort | head -n "$COUNT")
 
