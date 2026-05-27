@@ -1,0 +1,31 @@
+name: Upload book posts every 5 minutes
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: upload-book-posts
+  cancel-in-progress: false
+
+jobs:
+  upload-one-post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Upload next Markdown post
+        run: bash scripts/upload_one.sh
